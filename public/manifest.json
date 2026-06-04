@@ -1,1 +1,16 @@
-
+{
+  "name": "MAKITY — Le marché guinéen en ligne",
+  "short_name": "MAKITY",
+  "description": "Achetez et vendez partout en Guinée.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#15303A",
+  "orientation": "portrait",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
