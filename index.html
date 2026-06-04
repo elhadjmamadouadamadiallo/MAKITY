@@ -1,1 +1,32 @@
-
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>MAKITY — Le marché guinéen en ligne</title>
+  <meta name="description" content="Le marché guinéen en ligne : achetez et vendez partout en Guinée." />
+  <meta name="theme-color" content="#15303A" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MAKITY" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="MAKITY — Le marché guinéen en ligne" />
+  <meta property="og:description" content="Achetez et vendez partout en Guinée." />
+  <meta property="og:image" content="/icon-512.png" />
+  <style> html, body { margin: 0; padding: 0; background: #FAF7F2; } </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js").catch(function (e) { console.warn("SW:", e); });
+      });
+    }
+  </script>
+</body>
+</html>
