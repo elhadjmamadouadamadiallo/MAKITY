@@ -5,6 +5,11 @@ import {
   deleteAccount as dbDeleteAccount, insertAnnonce, deleteAnnonce, uploadAvatar,
 } from "./lib/db.js";
 
+/*  MAKITY — Le marché guinéen en ligne (connecté à Supabase)
+    Authentification e-mail (phase de développement) ; la vérification WhatsApp
+    la remplacera avant le lancement. Le numéro WhatsApp reste demandé et affiché.
+*/
+
 const INK = "#15303A", PAPER = "#FAF7F2", SLATE = "#5B7079";
 const GREEN = "#1EB53A", GOLD = "#FCD116", RED = "#CE1126";
 const CARD = "#FFFFFF", LINE = "#E7E1D6";
@@ -50,6 +55,7 @@ const TINTS = {
   bebe: ["#D98AAE", "#B86A8E"], divers: ["#5B7079", "#43545C"],
 };
 
+// Annonces d'exemple : affichées uniquement si la base est encore vide.
 const ADS_SEED = [
   { id: 1, title: "iPhone 13 — 128 Go, bleu", cat: "tel", price: 4500000, city: "Conakry", shop: "Électronique Diallo", phone: "224621000001", views: 412, desc: "iPhone 13 128 Go en très bon état, batterie 92%. Débloqué tous opérateurs." },
   { id: 2, title: "Réfrigérateur 200 L", cat: "elec", price: 3200000, city: "Conakry", shop: "Camara Électro", phone: "224622000002", views: 230, desc: "Réfrigérateur neuf 200 litres, classe A, garantie 6 mois. Livraison Conakry." },
@@ -62,6 +68,7 @@ const ADS_SEED = [
 const fmtFG = (n) => Number(n || 0).toLocaleString("fr-FR").replace(/\u202f/g, " ") + " FG";
 const DOTS = "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)";
 
+// Traduit les erreurs Supabase courantes
 function frError(e) {
   const m = (e?.message || "").toLowerCase();
   if (m.includes("already registered") || m.includes("already exists")) return "Cet e-mail a déjà un compte. Connectez-vous.";
@@ -70,7 +77,9 @@ function frError(e) {
   if (m.includes("not configured") || m.includes("failed to fetch")) return "Connexion à la base impossible (vérifiez la configuration).";
   return e?.message || "Une erreur est survenue.";
 }
-const mapProfile = (p) => ({ id: p.id, shop: p.shop_name, city: p.city, phone: p.phone, avatar: p.avatar_url });function PinLogo({ size = 30 }) {
+const mapProfile = (p) => ({ id: p.id, shop: p.shop_name, city: p.city, phone: p.phone, avatar: p.avatar_url });
+
+function PinLogo({ size = 30 }) {
   const gid = "pg" + size;
   return (
     <svg width={size} height={size} viewBox="0 0 24 26" aria-hidden="true">
@@ -110,6 +119,7 @@ function Avatar({ src, size = 44, ring = false }) {
   return <div style={{ ...base, background: "linear-gradient(135deg,#1EB53A,#15303A)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.5 }}>🏪</div>;
 }
 
+// ===== ÉCRAN 0 — ENTRÉE =====
 function Entry({ onClient, onAnnonceur }) {
   return (
     <div style={{ ...page, background: INK, color: PAPER, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
@@ -146,6 +156,7 @@ const choiceIcon = (bg) => ({ width: 46, height: 46, borderRadius: 12, flex: "0 
 const choiceTitle = { display: "block", fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 18, fontWeight: 800, color: INK };
 const choiceSub = { display: "block", fontSize: 12.5, color: SLATE, marginTop: 2, lineHeight: 1.3 };
 
+// ===== ANNONCEUR — Accueil auth =====
 function AuthHome({ onHome, onLogin, onRegister }) {
   return (
     <div style={page}>
@@ -162,7 +173,10 @@ function AuthHome({ onHome, onLogin, onRegister }) {
       </div>
     </div>
   );
-                   }function Register({ onBack, onAuthed }) {
+}
+
+// ===== Inscription (A1) — e-mail + profil =====
+function Register({ onBack, onAuthed }) {
   const [shop, setShop] = useState("");
   const [city, setCity] = useState(CITIES[0]);
   const [phone, setPhone] = useState("");
@@ -217,9 +231,8 @@ function AuthHome({ onHome, onLogin, onRegister }) {
         <input style={fld} value={shop} onChange={(e) => setShop(e.target.value)} placeholder="Ex. Électronique Diallo" />
 
         <label style={lbl}>Ville</label>
-        <select style={{ ...fld, appearance: "none" }} value={city} onChange={(e) => setCity(e.target.value)}>
-          {CITIES.map((c) => <option key={c}>{c}</option>)}
-        </select>
+        <input style={fld} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ex. Conakry, Labé, Kankan…" list="villes-guinee" />
+        <datalist id="villes-guinee">{CITIES.map((c) => <option key={c} value={c} />)}</datalist>
 
         <label style={lbl}>Numéro WhatsApp (affiché sur vos annonces)</label>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
@@ -248,6 +261,7 @@ function AuthHome({ onHome, onLogin, onRegister }) {
   );
 }
 
+// ===== Connexion =====
 function Login({ onBack, onAuthed, onRegister }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -282,6 +296,7 @@ function Login({ onBack, onAuthed, onRegister }) {
   );
 }
 
+// ===== Tableau de bord (A2) =====
 function Dashboard({ session, myAds, loading, onHome, onPublish, onSub, onAccount, onDelete }) {
   const totalViews = myAds.reduce((s, a) => s + (a.views || 0), 0);
   return (
@@ -343,7 +358,10 @@ function MiniThumb({ ad }) {
   const [a, b] = TINTS[ad.cat] || TINTS.divers;
   if (ad.photos && ad.photos[0]) return <img src={ad.photos[0]} alt="" style={{ width: 58, height: 58, borderRadius: 10, objectFit: "cover", flex: "0 0 auto" }} />;
   return <div style={{ width: 58, height: 58, borderRadius: 10, flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, background: `linear-gradient(135deg, ${a}, ${b})` }}>{catIcon(ad.cat)}</div>;
-      }function PublishAd({ session, onBack, onPublish }) {
+}
+
+// ===== Publier (A3) =====
+function PublishAd({ session, onBack, onPublish }) {
   const [title, setTitle] = useState("");
   const [cat, setCat] = useState(CATEGORIES[0].id);
   const [price, setPrice] = useState("");
@@ -378,9 +396,8 @@ function MiniThumb({ ad }) {
         <label style={lbl}>Prix (FG)</label>
         <input style={fld} value={price} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))} placeholder="Ex. 350000" inputMode="numeric" />
         <label style={lbl}>Ville</label>
-        <select style={{ ...fld, appearance: "none" }} value={city} onChange={(e) => setCity(e.target.value)}>
-          {CITIES.map((c) => <option key={c}>{c}</option>)}
-        </select>
+        <input style={fld} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ex. Conakry, Labé, Kankan…" list="villes-guinee2" />
+        <datalist id="villes-guinee2">{CITIES.map((c) => <option key={c} value={c} />)}</datalist>
         <label style={lbl}>Photos (jusqu'à 4)</label>
         <label style={{ ...fld, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: SLATE }}>
           📷 Choisir des photos
@@ -401,6 +418,7 @@ function MiniThumb({ ad }) {
   );
 }
 
+// ===== Abonnement (A4) =====
 function Subscription({ onBack }) {
   return (
     <div style={page}>
@@ -425,6 +443,7 @@ function Subscription({ onBack }) {
   );
 }
 
+// ===== Compte (A5) =====
 function Account({ session, onBack, onLogout, onDeleteAccount, onAvatarChange }) {
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -475,6 +494,7 @@ function Row({ k, v }) {
   );
 }
 
+// ===== CLIENT — Catalogue + Fiche =====
 function Thumb({ ad, big = false }) {
   const [a, b] = TINTS[ad.cat] || TINTS.divers;
   if (ad.photos && ad.photos[0]) {
@@ -493,6 +513,33 @@ function Thumb({ ad, big = false }) {
     </div>
   );
 }
+function Carousel({ ad }) {
+  const photos = (ad.photos && ad.photos.length) ? ad.photos : [];
+  const [idx, setIdx] = useState(0);
+  if (photos.length === 0) return <Thumb ad={ad} big />;
+  const n = photos.length;
+  const prev = () => setIdx((i) => (i - 1 + n) % n);
+  const next = () => setIdx((i) => (i + 1) % n);
+  return (
+    <div style={{ position: "relative", width: "100%", height: 300, overflow: "hidden", background: "#000" }}>
+      <img src={photos[idx]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      <span style={{ position: "absolute", top: 14, right: 14, fontSize: 10.5, fontWeight: 700, color: PAPER, background: "rgba(21,48,58,.7)", padding: "3px 9px", borderRadius: 999 }}>{catLabel(ad.cat)}</span>
+      {n > 1 && (
+        <>
+          <button onClick={prev} aria-label="Précédent" style={carBtn("left")}>‹</button>
+          <button onClick={next} aria-label="Suivant" style={carBtn("right")}>›</button>
+          <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6 }}>
+            {photos.map((_, i) => (
+              <span key={i} onClick={() => setIdx(i)} style={{ width: i === idx ? 22 : 8, height: 8, borderRadius: 999, background: i === idx ? PAPER : "rgba(255,255,255,.5)", transition: "all .2s", cursor: "pointer" }} />
+            ))}
+          </div>
+          <span style={{ position: "absolute", top: 14, left: 14, fontSize: 11, fontWeight: 700, color: PAPER, background: "rgba(21,48,58,.7)", padding: "3px 9px", borderRadius: 999 }}>{idx + 1}/{n}</span>
+        </>
+      )}
+    </div>
+  );
+}
+const carBtn = (side) => ({ position: "absolute", top: "50%", transform: "translateY(-50%)", [side]: 10, width: 40, height: 40, borderRadius: 999, border: "none", background: "rgba(21,48,58,.55)", color: PAPER, fontSize: 26, lineHeight: 1, cursor: "pointer", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center" });
 function AdDetail({ ad, onClose, onReport }) {
   const waText = encodeURIComponent(`Bonjour, je suis intéressé(e) par votre annonce sur MAKITY :\n« ${ad.title} » — ${fmtFG(ad.price)} (${ad.city}).\nEst-elle toujours disponible ?`);
   const [reported, setReported] = useState(false);
@@ -501,7 +548,7 @@ function AdDetail({ ad, onClose, onReport }) {
     <div style={{ position: "fixed", inset: 0, background: PAPER, zIndex: 50, overflowY: "auto", animation: "mkFade .25s ease" }}>
       <div style={{ maxWidth: 520, margin: "0 auto", paddingBottom: 28 }}>
         <button onClick={onClose} style={{ position: "absolute", top: 14, left: 14, zIndex: 2, width: 40, height: 40, borderRadius: 999, border: "none", background: "rgba(21,48,58,.55)", color: PAPER, fontSize: 20, backdropFilter: "blur(4px)", cursor: "pointer" }} aria-label="Retour">←</button>
-        <Thumb ad={ad} big />
+        <Carousel ad={ad} />
         <div style={{ padding: "18px 18px 0" }}>
           <h1 style={{ margin: 0, fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 22, lineHeight: 1.15, color: INK, fontWeight: 700 }}>{ad.title}</h1>
           <div style={{ marginTop: 10, fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 26, fontWeight: 800, color: GREEN }}>{fmtFG(ad.price)}</div>
@@ -623,6 +670,7 @@ function Select({ value, onChange, options }) {
   );
 }
 
+// ===== APP SHELL =====
 export default function MakityApp() {
   const [screen, setScreen] = useState("entry");
   const [ads, setAds] = useState(ADS_SEED);
@@ -646,6 +694,7 @@ export default function MakityApp() {
       .finally(() => setLoadingMine(false));
   };
 
+  // Démarrage : catalogue + restauration de session
   useEffect(() => {
     refreshCatalogue();
     getSessionUser().then((u) => {
@@ -653,6 +702,7 @@ export default function MakityApp() {
     }).catch(() => {});
   }, []);
 
+  // Charger mes annonces en entrant dans le tableau de bord
   useEffect(() => {
     if (screen === "dashboard" && session) loadMyAds(session.id);
   }, [screen, session]);
@@ -697,4 +747,4 @@ export default function MakityApp() {
       {screen === "account" && session && <Account session={session} onBack={() => go("dashboard")} onLogout={logout} onDeleteAccount={removeAccount} onAvatarChange={changeAvatar} />}
     </>
   );
-      }
+}
