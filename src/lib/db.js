@@ -90,7 +90,7 @@ export async function insertAnnonce(annonce, files) {
       price: annonce.price,
       city: annonce.city,
       description: annonce.desc,
-      phone: annonce.phone,
+      contact_phone: annonce.phone,
       shop: annonce.shop || null,
       status: "active",
       views: 0,
