@@ -13,6 +13,15 @@ export async function signUpEmail(email, password) {
 export async function signInEmail(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
+  const { data: prof } = await supabase
+    .from("annonceurs")
+    .select("deletion_requested")
+    .eq("id", data.user.id)
+    .maybeSingle();
+  if (prof && prof.deletion_requested) {
+    await supabase.auth.signOut();
+    throw new Error("Ce compte est en cours de suppression.");
+  }
   return data;
 }
 
@@ -51,7 +60,11 @@ export async function uploadAvatar(uid, file) {
 }
 
 export async function deleteAccount(uid) {
-  const { error } = await supabase.from("annonceurs").delete().eq("id", uid);
+  await supabase.from("annonces").update({ status: "hidden" }).eq("annonceur_id", uid);
+  const { error } = await supabase
+    .from("annonceurs")
+    .update({ deletion_requested: true, deletion_requested_at: new Date().toISOString() })
+    .eq("id", uid);
   if (error) throw error;
 }
 
