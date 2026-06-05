@@ -372,7 +372,7 @@ function PublishAd({ session, onBack, onPublish }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const onFiles = (e) => {
-    const list = Array.from(e.target.files || []).slice(0, 4);
+    const list = Array.from(e.target.files || []).slice(0, 15);
     setFiles(list); setPreviews(list.map((f) => URL.createObjectURL(f)));
   };
   const submit = async () => {
@@ -398,7 +398,7 @@ function PublishAd({ session, onBack, onPublish }) {
         <label style={lbl}>Ville</label>
         <input style={fld} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ex. Conakry, Labé, Kankan…" list="villes-guinee2" />
         <datalist id="villes-guinee2">{CITIES.map((c) => <option key={c} value={c} />)}</datalist>
-        <label style={lbl}>Photos (jusqu'à 4)</label>
+        <label style={lbl}>Photos (jusqu'à 15)</label>
         <label style={{ ...fld, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: SLATE }}>
           📷 Choisir des photos
           <input type="file" accept="image/*" multiple onChange={onFiles} style={{ display: "none" }} />
@@ -516,21 +516,36 @@ function Thumb({ ad, big = false }) {
 function Carousel({ ad }) {
   const photos = (ad.photos && ad.photos.length) ? ad.photos : [];
   const [idx, setIdx] = useState(0);
+  const touchX = React.useRef(null);
   if (photos.length === 0) return <Thumb ad={ad} big />;
   const n = photos.length;
-  const prev = () => setIdx((i) => (i - 1 + n) % n);
-  const next = () => setIdx((i) => (i + 1) % n);
+  const go = (i) => setIdx((i + n) % n);
+  const prev = () => go(idx - 1);
+  const next = () => go(idx + 1);
+  const onTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (touchX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    if (dx > 40) prev();
+    else if (dx < -40) next();
+    touchX.current = null;
+  };
   return (
-    <div style={{ position: "relative", width: "100%", height: 300, overflow: "hidden", background: "#000" }}>
-      <img src={photos[idx]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+    <div style={{ position: "relative", width: "100%", height: 300, overflow: "hidden", background: "#000" }}
+         onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div style={{ display: "flex", height: "100%", width: "100%", transform: `translateX(-${idx * 100}%)`, transition: "transform .3s ease" }}>
+        {photos.map((src, i) => (
+          <img key={i} src={src} alt="" style={{ width: "100%", height: "100%", flex: "0 0 100%", objectFit: "cover" }} />
+        ))}
+      </div>
       <span style={{ position: "absolute", top: 14, right: 14, fontSize: 10.5, fontWeight: 700, color: PAPER, background: "rgba(21,48,58,.7)", padding: "3px 9px", borderRadius: 999 }}>{catLabel(ad.cat)}</span>
       {n > 1 && (
         <>
           <button onClick={prev} aria-label="Précédent" style={carBtn("left")}>‹</button>
           <button onClick={next} aria-label="Suivant" style={carBtn("right")}>›</button>
-          <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6 }}>
+          <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap", padding: "0 12px" }}>
             {photos.map((_, i) => (
-              <span key={i} onClick={() => setIdx(i)} style={{ width: i === idx ? 22 : 8, height: 8, borderRadius: 999, background: i === idx ? PAPER : "rgba(255,255,255,.5)", transition: "all .2s", cursor: "pointer" }} />
+              <span key={i} onClick={() => go(i)} style={{ width: i === idx ? 22 : 8, height: 8, borderRadius: 999, background: i === idx ? PAPER : "rgba(255,255,255,.5)", transition: "all .2s", cursor: "pointer" }} />
             ))}
           </div>
           <span style={{ position: "absolute", top: 14, left: 14, fontSize: 11, fontWeight: 700, color: PAPER, background: "rgba(21,48,58,.7)", padding: "3px 9px", borderRadius: 999 }}>{idx + 1}/{n}</span>
@@ -544,6 +559,18 @@ function AdDetail({ ad, onClose, onReport }) {
   const waText = encodeURIComponent(`Bonjour, je suis intéressé(e) par votre annonce sur MAKITY :\n« ${ad.title} » — ${fmtFG(ad.price)} (${ad.city}).\nEst-elle toujours disponible ?`);
   const [reported, setReported] = useState(false);
   const report = async () => { try { await onReport(ad.id); } catch (_) {} setReported(true); };
+  const share = async () => {
+    const url = `${window.location.origin}/a/${ad.id}`;
+    const text = `${ad.title} — ${fmtFG(ad.price)} (${ad.city})\nÀ voir sur MAKITY :`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: ad.title, text, url });
+      } else {
+        await navigator.clipboard.writeText(`${text} ${url}`);
+        alert("Lien copié ! Vous pouvez le coller sur WhatsApp ou Facebook.");
+      }
+    } catch (_) {}
+  };
   return (
     <div style={{ position: "fixed", inset: 0, background: PAPER, zIndex: 50, overflowY: "auto", animation: "mkFade .25s ease" }}>
       <div style={{ maxWidth: 520, margin: "0 auto", paddingBottom: 28 }}>
@@ -566,7 +593,7 @@ function AdDetail({ ad, onClose, onReport }) {
             <a href={`https://wa.me/${ad.phone}?text=${waText}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "14px 0", borderRadius: 14, background: "#25D366", color: "#06351A", fontWeight: 800, textDecoration: "none", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>WhatsApp</a>
           </div>
           <div style={{ display: "flex", gap: 18, marginTop: 14, justifyContent: "center" }}>
-            <button style={ghostBtn}>↗ Partager</button>
+            <button style={ghostBtn} onClick={share}>↗ Partager</button>
             <button style={ghostBtn} onClick={report} disabled={reported}>{reported ? "✓ Signalé" : "⚑ Signaler"}</button>
           </div>
         </div>
@@ -590,7 +617,7 @@ function AdCard({ ad, onOpen, i }) {
     </button>
   );
 }
-function Catalogue({ ads, onHome, onReport }) {
+function Catalogue({ ads, onHome, onReport, initialAdId }) {
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState("all");
   const [city, setCity] = useState("all");
@@ -610,7 +637,36 @@ function Catalogue({ ads, onHome, onReport }) {
     if (sort === "desc") r = [...r].sort((a, b) => b.price - a.price);
     return r;
   }, [ads, query, activeCat, city, sort]);
-  const open = (ad) => { setSelected(ad); incrementViews(ad.id).catch(() => {}); };
+  // Ouvrir automatiquement l'annonce dont l'id est dans l'URL (lien partagé)
+  useEffect(() => {
+    if (initialAdId && ads.length) {
+      const found = ads.find((a) => String(a.id) === String(initialAdId));
+      if (found) { setSelected(found); incrementViews(found.id).catch(() => {}); }
+    }
+  }, [initialAdId, ads]);
+  const open = (ad) => {
+    setSelected(ad);
+    incrementViews(ad.id).catch(() => {});
+    window.history.pushState({ adId: ad.id }, "", `/a/${ad.id}`);
+  };
+  const close = () => {
+    setSelected(null);
+    window.history.pushState({}, "", "/");
+  };
+  // Bouton retour du navigateur : fermer le détail si ouvert
+  useEffect(() => {
+    const onPop = () => {
+      const m = window.location.pathname.match(/^\/a\/(.+)$/);
+      if (m) {
+        const found = ads.find((a) => String(a.id) === String(m[1]));
+        setSelected(found || null);
+      } else {
+        setSelected(null);
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [ads]);
   return (
     <div style={page}>
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: INK, color: PAPER, padding: "12px 16px 14px", boxShadow: "0 2px 14px rgba(21,48,58,.18)" }}>
@@ -648,7 +704,7 @@ function Catalogue({ ads, onHome, onReport }) {
         )}
         <p style={{ textAlign: "center", color: SLATE, fontSize: 11.5, marginTop: 30 }}>MAKITY — le marché guinéen en ligne</p>
       </main>
-      {selected && <AdDetail ad={selected} onClose={() => setSelected(null)} onReport={onReport} />}
+      {selected && <AdDetail ad={selected} onClose={close} onReport={onReport} />}
     </div>
   );
 }
@@ -672,7 +728,10 @@ function Select({ value, onChange, options }) {
 
 // ===== APP SHELL =====
 export default function MakityApp() {
-  const [screen, setScreen] = useState("entry");
+  const initialPath = (typeof window !== "undefined" ? window.location.pathname : "/");
+  const initialMatch = initialPath.match(/^\/a\/(.+)$/);
+  const initialAdId = initialMatch ? initialMatch[1] : null;
+  const [screen, setScreen] = useState(initialAdId ? "catalogue" : "entry");
   const [ads, setAds] = useState(ADS_SEED);
   const [session, setSession] = useState(null);
   const [myAds, setMyAds] = useState([]);
@@ -737,7 +796,7 @@ export default function MakityApp() {
     <>
       <style>{GLOBAL_CSS}</style>
       {screen === "entry" && <Entry onClient={() => go("catalogue")} onAnnonceur={goAnnonceur} />}
-      {screen === "catalogue" && <Catalogue ads={ads} onHome={() => go("entry")} onReport={report} />}
+      {screen === "catalogue" && <Catalogue ads={ads} onHome={() => go("entry")} onReport={report} initialAdId={initialAdId} />}
       {screen === "auth" && <AuthHome onHome={() => go("entry")} onLogin={() => go("login")} onRegister={() => go("register")} />}
       {screen === "register" && <Register onBack={() => go("auth")} onAuthed={onAuthed} />}
       {screen === "login" && <Login onBack={() => go("auth")} onAuthed={onAuthed} onRegister={() => go("register")} />}
