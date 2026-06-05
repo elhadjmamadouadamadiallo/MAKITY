@@ -133,7 +133,7 @@ function Entry({ onClient, onAnnonceur }) {
         <div style={{ textAlign: "center", animation: "mkPop .5s ease both" }}>
           <PinLogo size={64} />
           <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 800, fontSize: 46, letterSpacing: -1.5, marginTop: 6 }}>MAKITY</div>
-          <div style={{ color: "#9FB4BC", fontSize: 15, marginTop: 2 }}>Le marché guinéen en ligne</div>
+          <div style={{ color: "#9FB4BC", fontSize: 15, marginTop: 2 }}>Rapidité · Efficacité · Facilité</div>
         </div>
         <div style={{ textAlign: "center", marginTop: 38, marginBottom: 16, fontSize: 14, color: "#C7D3D8" }}>Vous êtes…</div>
         <button onClick={onClient} style={choiceCard(GREEN, 0)}>
@@ -676,7 +676,7 @@ function Catalogue({ ads, onHome, onReport, initialAdId }) {
             <PinLogo size={28} />
             <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 800, fontSize: 22, letterSpacing: -0.5 }}>MAKITY</div>
             <div style={{ flex: 1 }} />
-            <div style={{ fontSize: 11, color: "#9FB4BC", textAlign: "right", lineHeight: 1.2 }}>Le marché<br />guinéen en ligne</div>
+            <div style={{ fontSize: 11, color: "#9FB4BC", textAlign: "right", lineHeight: 1.2 }}>Rapidité · Efficacité<br />Facilité</div>
           </div>
           <div style={{ marginTop: 12, position: "relative" }}>
             <span style={{ position: "absolute", left: 13, top: 11, fontSize: 16, opacity: .6 }}>🔎</span>
@@ -702,7 +702,7 @@ function Catalogue({ ads, onHome, onReport, initialAdId }) {
             {list.map((ad, i) => <AdCard key={ad.id} ad={ad} i={i} onOpen={open} />)}
           </div>
         )}
-        <p style={{ textAlign: "center", color: SLATE, fontSize: 11.5, marginTop: 30 }}>MAKITY — le marché guinéen en ligne</p>
+        <p style={{ textAlign: "center", color: SLATE, fontSize: 11.5, marginTop: 30 }}>MAKITY — Rapidité · Efficacité · Facilité</p>
       </main>
       {selected && <AdDetail ad={selected} onClose={close} onReport={onReport} />}
     </div>
