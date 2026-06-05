@@ -2,29 +2,58 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+
+  <!-- Affichage mobile : indispensable pour une PWA -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>MAKITY — Le marché guinéen en ligne</title>
-  <meta name="description" content="Le marché guinéen en ligne : achetez et vendez partout en Guinée." />
+
+  <!-- Identité de la page -->
+  <title>MAKITY — Rapidité · Efficacité · Facilité</title>
+  <meta name="description" content="MAKITY — Rapidité, Efficacité, Facilité. Le marché guinéen en ligne : achetez et vendez partout en Guinée. Annonces de commerçants et marchands." />
+
+  <!-- Couleur de la barre du navigateur / système -->
   <meta name="theme-color" content="#15303A" />
+
+  <!-- Manifeste PWA (rend l'appli installable) -->
   <link rel="manifest" href="/manifest.json" />
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- Icônes -->
+  <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+  <!-- Réglages iOS pour le mode appli plein écran -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="MAKITY" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- Partage sur réseaux sociaux / WhatsApp (Open Graph) -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="MAKITY — Le marché guinéen en ligne" />
+  <meta property="og:site_name" content="MAKITY" />
+  <meta property="og:title" content="MAKITY — Rapidité · Efficacité · Facilité" />
   <meta property="og:description" content="Achetez et vendez partout en Guinée." />
-  <meta property="og:image" content="/icon-512.png" />
-  <style> html, body { margin: 0; padding: 0; background: #FAF7F2; } </style>
+  <meta property="og:image" content="/icons/icon-512.png" />
+  <meta property="og:locale" content="fr_GN" />
+
+  <style>
+    html, body { margin: 0; padding: 0; background: #FAF7F2; }
+    /* Évite le zoom involontaire et respecte les encoches */
+    body { -webkit-text-size-adjust: 100%; }
+  </style>
 </head>
 <body>
+  <!-- L'application React (MAKITY_app.jsx) se montera ici -->
   <div id="root"></div>
+
+  <!-- Point d'entrée de l'application (adapter selon l'outil de build, ex. Vite) -->
   <script type="module" src="/src/main.jsx"></script>
+
+  <!-- Enregistrement du service worker (mode hors-ligne + installation) -->
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("/sw.js").catch(function (e) { console.warn("SW:", e); });
+        navigator.serviceWorker.register("/sw.js").catch(function (e) {
+          console.warn("Service worker non enregistré :", e);
+        });
       });
     }
   </script>
