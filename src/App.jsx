@@ -516,6 +516,7 @@ function Thumb({ ad, big = false }) {
 function Carousel({ ad }) {
   const photos = (ad.photos && ad.photos.length) ? ad.photos : [];
   const [idx, setIdx] = useState(0);
+  const [zoom, setZoom] = useState(false);
   const touchX = React.useRef(null);
   if (photos.length === 0) return <Thumb ad={ad} big />;
   const n = photos.length;
@@ -535,10 +536,11 @@ function Carousel({ ad }) {
          onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div style={{ display: "flex", height: "100%", width: "100%", transform: `translateX(-${idx * 100}%)`, transition: "transform .3s ease" }}>
         {photos.map((src, i) => (
-          <img key={i} src={src} alt="" style={{ width: "100%", height: "100%", flex: "0 0 100%", objectFit: "cover" }} />
+          <img key={i} src={src} alt="" onClick={() => setZoom(true)} style={{ width: "100%", height: "100%", flex: "0 0 100%", objectFit: "cover", cursor: "zoom-in" }} />
         ))}
       </div>
       <span style={{ position: "absolute", top: 14, right: 14, fontSize: 10.5, fontWeight: 700, color: PAPER, background: "rgba(21,48,58,.7)", padding: "3px 9px", borderRadius: 999 }}>{catLabel(ad.cat)}</span>
+      <span style={{ position: "absolute", bottom: 44, right: 14, fontSize: 10.5, fontWeight: 600, color: PAPER, background: "rgba(21,48,58,.7)", padding: "3px 9px", borderRadius: 999 }}>👆 Toucher pour agrandir</span>
       {n > 1 && (
         <>
           <button onClick={prev} aria-label="Précédent" style={carBtn("left")}>‹</button>
@@ -551,10 +553,47 @@ function Carousel({ ad }) {
           <span style={{ position: "absolute", top: 14, left: 14, fontSize: 11, fontWeight: 700, color: PAPER, background: "rgba(21,48,58,.7)", padding: "3px 9px", borderRadius: 999 }}>{idx + 1}/{n}</span>
         </>
       )}
+      {zoom && <Lightbox photos={photos} start={idx} onClose={() => setZoom(false)} />}
     </div>
   );
 }
-const carBtn = (side) => ({ position: "absolute", top: "50%", transform: "translateY(-50%)", [side]: 10, width: 40, height: 40, borderRadius: 999, border: "none", background: "rgba(21,48,58,.55)", color: PAPER, fontSize: 26, lineHeight: 1, cursor: "pointer", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center" });
+
+function Lightbox({ photos, start = 0, onClose }) {
+  const [i, setI] = useState(start);
+  const touchX = React.useRef(null);
+  const n = photos.length;
+  const go = (k) => setI((k + n) % n);
+  const onTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (touchX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    if (dx > 40) go(i - 1);
+    else if (dx < -40) go(i + 1);
+    touchX.current = null;
+  };
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 100, display: "flex", flexDirection: "column", animation: "mkFade .2s ease" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px" }}>
+        <span style={{ color: PAPER, fontSize: 14, fontWeight: 700 }}>{i + 1} / {n}</span>
+        <button onClick={onClose} aria-label="Fermer" style={{ width: 46, height: 46, borderRadius: 999, border: `2px solid ${PAPER}`, background: "rgba(255,255,255,.12)", color: PAPER, fontSize: 22, fontWeight: 800, cursor: "pointer" }}>✕</button>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}
+           onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <img src={photos[i]} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+        {n > 1 && (
+          <>
+            <button onClick={() => go(i - 1)} aria-label="Précédent" style={carBtn("left")}>‹</button>
+            <button onClick={() => go(i + 1)} aria-label="Suivant" style={carBtn("right")}>›</button>
+          </>
+        )}
+      </div>
+      <div style={{ textAlign: "center", color: "#C7D3D8", fontSize: 12.5, padding: "14px 20px 22px" }}>
+        Appui long sur la photo pour l'enregistrer dans votre téléphone
+      </div>
+    </div>
+  );
+}
+const carBtn = (side) => ({ position: "absolute", top: "50%", transform: "translateY(-50%)", [side]: 12, width: 52, height: 52, borderRadius: 999, border: `2px solid ${PAPER}`, background: "rgba(21,48,58,.85)", color: PAPER, fontSize: 32, fontWeight: 800, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(0,0,0,.45)", zIndex: 3 });
 function AdDetail({ ad, onClose, onReport }) {
   const waText = encodeURIComponent(`Bonjour, je suis intéressé(e) par votre annonce sur MAKITY :\n« ${ad.title} » — ${fmtFG(ad.price)} (${ad.city}).\nEst-elle toujours disponible ?`);
   const [reported, setReported] = useState(false);
@@ -574,7 +613,7 @@ function AdDetail({ ad, onClose, onReport }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: PAPER, zIndex: 50, overflowY: "auto", animation: "mkFade .25s ease" }}>
       <div style={{ maxWidth: 520, margin: "0 auto", paddingBottom: 28 }}>
-        <button onClick={onClose} style={{ position: "absolute", top: 14, left: 14, zIndex: 2, width: 40, height: 40, borderRadius: 999, border: "none", background: "rgba(21,48,58,.55)", color: PAPER, fontSize: 20, backdropFilter: "blur(4px)", cursor: "pointer" }} aria-label="Retour">←</button>
+        <button onClick={onClose} style={{ position: "absolute", top: 14, left: 14, zIndex: 4, width: 48, height: 48, borderRadius: 999, border: `2px solid ${PAPER}`, background: "rgba(21,48,58,.85)", color: PAPER, fontSize: 24, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 14px rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center" }} aria-label="Retour">←</button>
         <Carousel ad={ad} />
         <div style={{ padding: "18px 18px 0" }}>
           <h1 style={{ margin: 0, fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 22, lineHeight: 1.15, color: INK, fontWeight: 700 }}>{ad.title}</h1>
