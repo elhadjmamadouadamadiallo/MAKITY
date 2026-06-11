@@ -187,6 +187,7 @@ function Register({ onBack, onAuthed }) {
   const [cgu, setCgu] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
   const digits = phone.replace(/\D/g, "");
 
   const onAvatar = (e) => {
@@ -202,17 +203,55 @@ function Register({ onBack, onAuthed }) {
     setErr(""); setBusy(true);
     try {
       const data = await signUpEmail(email.trim(), password);
-      const uid = data.user.id;
-      let avatarUrl = null;
-      if (avatarFile) { try { avatarUrl = await uploadAvatar(uid, avatarFile); } catch (_) {} }
-      const profile = await saveProfile({
-        id: uid, shop_name: shop.trim(), city, phone: "224" + digits.slice(-9), avatar_url: avatarUrl,
-      });
-      onAuthed(mapProfile(profile));
+      // Le compte doit être confirmé par e-mail avant de créer le profil.
+      // On garde les infos boutique en attente, le profil sera créé à la 1ère connexion.
+      try {
+        let avatarDataUrl = null;
+        if (avatarFile) {
+          avatarDataUrl = await new Promise((res) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result);
+            r.onerror = () => res(null);
+            r.readAsDataURL(avatarFile);
+          });
+        }
+        localStorage.setItem("makity_pending_profile", JSON.stringify({
+          email: email.trim(),
+          shop_name: shop.trim(),
+          city,
+          phone: "224" + digits.slice(-9),
+          avatar_data: avatarDataUrl,
+        }));
+      } catch (_) {}
+      setDone(true);
     } catch (e) {
       setErr(frError(e));
     } finally { setBusy(false); }
   };
+
+  if (done) {
+    return (
+      <div style={page}>
+        <AHeader title="Vérifiez votre e-mail" onBack={onBack} />
+        <div style={wrap}>
+          <div style={{ fontSize: 44, textAlign: "center", marginTop: 10 }}>📧</div>
+          <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 22, fontWeight: 800, textAlign: "center", margin: "12px 0 8px" }}>Confirmez votre e-mail</h1>
+          <p style={{ textAlign: "center", color: SLATE, fontSize: 14.5, lineHeight: 1.5 }}>
+            Un e-mail de confirmation vient d'être envoyé à <b style={{ color: INK }}>{email.trim()}</b>.
+          </p>
+          <div style={{ marginTop: 18, padding: "14px 16px", background: "#EAF6EC", border: `1px solid ${GREEN}`, borderRadius: 12, fontSize: 13.5, color: "#0E5A22", lineHeight: 1.5 }}>
+            1. Ouvrez votre boîte mail.<br />
+            2. Cliquez sur le lien de confirmation.<br />
+            3. Revenez ici et <b>connectez-vous</b> pour finaliser votre compte.
+          </div>
+          <p style={{ textAlign: "center", color: SLATE, fontSize: 12, marginTop: 14 }}>
+            Pensez à vérifier le dossier « Spam » ou « Courrier indésirable ».
+          </p>
+          <button style={primaryBtn} onClick={onBack}>J'ai compris</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={page}>
@@ -272,8 +311,28 @@ function Login({ onBack, onAuthed, onRegister }) {
     setErr(""); setBusy(true);
     try {
       const data = await signInEmail(email.trim(), password);
-      const profile = await getProfile(data.user.id);
-      if (!profile) { setErr("Profil introuvable. Contactez le support."); return; }
+      let profile = await getProfile(data.user.id);
+      if (!profile) {
+        // Première connexion après confirmation : on crée le profil depuis les infos en attente
+        let pending = null;
+        try { pending = JSON.parse(localStorage.getItem("makity_pending_profile") || "null"); } catch (_) {}
+        if (pending && pending.email === email.trim()) {
+          let avatarUrl = null;
+          if (pending.avatar_data) {
+            try {
+              const blob = await (await fetch(pending.avatar_data)).blob();
+              const file = new File([blob], "avatar.jpg", { type: blob.type || "image/jpeg" });
+              avatarUrl = await uploadAvatar(data.user.id, file);
+            } catch (_) {}
+          }
+          profile = await saveProfile({
+            id: data.user.id, shop_name: pending.shop_name, city: pending.city,
+            phone: pending.phone, avatar_url: avatarUrl,
+          });
+          try { localStorage.removeItem("makity_pending_profile"); } catch (_) {}
+        }
+      }
+      if (!profile) { setErr("Profil introuvable. Si vous venez de confirmer votre e-mail, réessayez."); return; }
       onAuthed(mapProfile(profile));
     } catch (e) { setErr(frError(e)); }
     finally { setBusy(false); }
