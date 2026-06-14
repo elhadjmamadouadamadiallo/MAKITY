@@ -56,14 +56,7 @@ const TINTS = {
 };
 
 // Annonces d'exemple : affichées uniquement si la base est encore vide.
-const ADS_SEED = [
-  { id: 1, title: "iPhone 13 — 128 Go, bleu", cat: "tel", price: 4500000, city: "Conakry", shop: "Électronique Diallo", phone: "224621000001", views: 412, desc: "iPhone 13 128 Go en très bon état, batterie 92%. Débloqué tous opérateurs." },
-  { id: 2, title: "Réfrigérateur 200 L", cat: "elec", price: 3200000, city: "Conakry", shop: "Camara Électro", phone: "224622000002", views: 230, desc: "Réfrigérateur neuf 200 litres, classe A, garantie 6 mois. Livraison Conakry." },
-  { id: 3, title: "Bazin riche brodé (complet)", cat: "tissus", price: 850000, city: "Labé", shop: "Boutique Hadja Aïssatou", phone: "224623000003", views: 587, desc: "Bazin riche getzner brodé main, qualité supérieure. Vente en gros et détail." },
-  { id: 4, title: "Sac de riz 50 kg", cat: "alim", price: 480000, city: "Kindia", shop: "Marché Madina Vivres", phone: "224627000007", views: 503, desc: "Riz parfumé importé, sac de 50 kg. Prix dégressif pour les revendeurs." },
-  { id: 5, title: "Moto Sanili 125", cat: "auto", price: 12000000, city: "Kankan", shop: "Garage Touré", phone: "224625000005", views: 96, desc: "Moto Sanili 125 cc neuve, carte grise en règle. Facilité de paiement possible." },
-  { id: 6, title: "Coffret parfum & soins", cat: "beaute", price: 420000, city: "Conakry", shop: "Beauté Néné", phone: "224629000009", views: 341, desc: "Coffret parfum longue tenue + crème. Produits authentiques. Livraison Conakry." },
-];
+const ADS_SEED = [];
 
 const fmtFG = (n) => Number(n || 0).toLocaleString("fr-FR").replace(/\u202f/g, " ") + " FG";
 const DOTS = "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)";
